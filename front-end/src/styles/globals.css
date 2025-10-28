@@ -1,0 +1,142 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --color-primary: #cf2e2e;
+  --color-primary-light: #fca5a5;
+  --color-primary-dark: #b91c1c;
+  --color-background: #fff;
+  --color-background-muted: #f8f8f8;
+  --color-border: #e5e7eb;
+  --color-card: #fff;
+  --color-card-muted: #f3f3f3;
+  --color-text: #222;
+  --color-text-muted: #888;
+  --color-footer-bg: #f8f8f8;
+}
+
+.dark {
+  --color-background: #0b0f14;
+  --color-background-muted: #0f1520;
+  --color-border: #1f2937;
+  --color-card: #0f1520;
+  --color-card-muted: #0b0f14;
+  --color-text: #eef2f7;
+  --color-text-muted: #94a3b8;
+  --color-footer-bg: #0f1520;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+/* Utility glue so Tailwind classes benefit from CSS variables */
+.bg-background {
+  background-color: var(--color-background);
+}
+.bg-card {
+  background-color: var(--color-card);
+}
+.bg-popover {
+  background-color: var(--color-card);
+}
+.bg-muted {
+  background-color: var(--color-background-muted);
+}
+.bg-accent {
+  background-color: var(--color-background-muted);
+}
+.bg-footer {
+  background-color: var(--color-footer-bg);
+}
+.text-foreground {
+  color: var(--color-text);
+}
+.text-popover-foreground {
+  color: var(--color-text);
+}
+.text-accent-foreground {
+  color: var(--color-text);
+}
+.text-muted-foreground {
+  color: var(--color-text-muted);
+}
+.border-border {
+  border-color: var(--color-border);
+}
+.shadow-header {
+  box-shadow: 0 1px 0 0 var(--color-border);
+}
+
+header.bg-background,
+footer.bg-footer {
+  background-color: inherit;
+}
+main {
+  background-color: var(--color-background);
+}
+
+@keyframes bar-shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* Quill read-only helpers so content pasted from the admin editor aligns properly on public pages */
+.ql-align-center {
+  text-align: center;
+}
+.ql-align-right {
+  text-align: right;
+}
+.ql-align-justify {
+  text-align: justify;
+}
+.ql-direction-rtl {
+  direction: rtl;
+}
+
+/* Indentation levels used by Quill for lists/blocks */
+.ql-indent-1 {
+  padding-left: 3em;
+}
+.ql-indent-2 {
+  padding-left: 6em;
+}
+.ql-indent-3 {
+  padding-left: 9em;
+}
+.ql-indent-4 {
+  padding-left: 12em;
+}
+.ql-indent-5 {
+  padding-left: 15em;
+}
+.ql-indent-6 {
+  padding-left: 18em;
+}
+.ql-indent-7 {
+  padding-left: 21em;
+}
+.ql-indent-8 {
+  padding-left: 24em;
+}
+.ql-indent-9 {
+  padding-left: 27em;
+}
+
+/* Fallback when Quill stores list semantics as data attributes on block elements */
+[data-list="bullet"] {
+  display: list-item;
+  list-style-type: disc;
+  margin-left: 1.25rem;
+}
+[data-list="ordered"] {
+  display: list-item;
+  list-style-type: decimal;
+  margin-left: 1.25rem;
+}

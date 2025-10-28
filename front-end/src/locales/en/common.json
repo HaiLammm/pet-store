@@ -1,0 +1,12 @@
+{
+  "hello": "Hello",
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "currency": "Currency",
+    "darkMode": "Dark Mode",
+    "preview": "Preview",
+    "priceExample": "Price example",
+    "languageSample": "Language sample"
+  }
+}

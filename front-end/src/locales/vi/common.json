@@ -1,0 +1,12 @@
+{
+  "hello": "Xin chào",
+  "settings": {
+    "title": "Cài đặt",
+    "language": "Ngôn ngữ",
+    "currency": "Tiền tệ",
+    "darkMode": "Chế độ tối",
+    "preview": "Xem trước",
+    "priceExample": "Ví dụ giá",
+    "languageSample": "Ví dụ ngôn ngữ"
+  }
+}
