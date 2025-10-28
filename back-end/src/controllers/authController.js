@@ -13,7 +13,7 @@ export const login = async (req, res) => {
   const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
     expiresIn: "7d",
   });
-  const { password: _pw, __v, ...safeUser } = user.toObject();
+  const { password: _pw, __v: _v, ...safeUser } = user.toObject();
   res.json({ user: { id: String(safeUser._id), ...safeUser }, token });
 };
 
@@ -27,7 +27,7 @@ export const register = async (req, res) => {
   const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
     expiresIn: "7d",
   });
-  const { password: _pw, __v, ...safeUser } = user.toObject();
+  const { password: _pw, __v: _v, ...safeUser } = user.toObject();
   res
     .status(201)
     .json({ user: { id: String(safeUser._id), ...safeUser }, token });
