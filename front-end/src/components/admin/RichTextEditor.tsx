@@ -4,14 +4,7 @@ import type Quill from "quill";
 type QuillRange = { index: number; length: number } | null;
 import "quill/dist/quill.snow.css";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { Input } from "@/components/ui/input";
 import {
   Bold,

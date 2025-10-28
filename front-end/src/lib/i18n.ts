@@ -23,7 +23,7 @@ i18n
         escapeValue: false,
       },
     },
-    (err, t) => {
+    (err) => {
       if (err) {
         console.error("i18next initialization failed:", err);
       } else {
