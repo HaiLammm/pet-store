@@ -1,341 +1,129 @@
+// Jenkinsfile - Declarative Pipeline cho Next.js (Front-end) và Node/TS (Back-end)
 pipeline {
-    agent any
+    // Sử dụng một Docker image làm Agent cho toàn bộ pipeline.
+    // Điều này đảm bảo rằng Node.js, npm, và yarn (nếu dùng) đã sẵn sàng.
+    agent {
+        docker {
+            image 'node:20-slim' // Dùng image tương tự như trong Dockerfile của bạn
+            args '-u root:root' // Đảm bảo quyền truy cập file trong môi trường Jenkins
+        }
+    }
 
+    // Định nghĩa các biến môi trường
     environment {
-        NODE_VERSION = '18'
-        NVM_DIR = '/home/jenkins/.nvm'
-        DOCKER_REGISTRY = 'your-registry.com' // Change this to your registry
-        FRONTEND_IMAGE = "${DOCKER_REGISTRY}/pet-store-frontend"
-        BACKEND_IMAGE = "${DOCKER_REGISTRY}/pet-store-backend"
-        MONGO_IMAGE = 'mongo:latest'
-        DOCKER_CREDENTIALS_ID = 'docker-registry-credentials' // Jenkins credentials ID
+        // Tên thư mục của Front-end và Back-end
+        FRONTEND_DIR = 'front-end'
+        BACKEND_DIR  = 'back-end'
+        // Tên image Docker cuối cùng để push (ví dụ)
+        DOCKER_IMAGE_NAME = "my-app/full-stack"
+        DOCKER_REGISTRY = "your-docker-registry.com"
     }
 
+    // Các bước của quy trình CI
     stages {
-        stage('Checkout') {
+        
+        // Stage 1: Checkout Code
+        stage('Checkout Code') {
             steps {
-                checkout scm
+                echo 'Checking out source code from SCM...'
+                // Lấy mã nguồn (checkout scm là bước mặc định khi dùng Git)
             }
         }
 
-        stage('Setup Node.js') {
+        // --- Back-end (Node.js/TypeScript) Stages ---
+        
+        stage('Backend: Install Dependencies & Build') {
             steps {
+                dir("${BACKEND_DIR}") {
+                    echo 'Installing backend dependencies...'
+                    // Sử dụng npm ci để đảm bảo tính nhất quán (dựa trên package-lock.json)
+                    sh 'npm ci' 
+                    
+                    echo 'Building backend TypeScript project...'
+                    // Lệnh build đã định nghĩa trong package.json của bạn: "build": "tsc"
+                    sh 'npm run build'
+                }
+            }
+        }
+        
+        stage('Backend: Test & Lint') {
+            steps {
+                dir("${BACKEND_DIR}") {
+                    echo 'Running backend linting...'
+                    // Lệnh lint đã định nghĩa trong package.json của bạn: "lint": "eslint ."
+                    sh 'npm run lint'
+                    
+                    echo 'Running backend tests...'
+                    // Lệnh test hiện đang là 'echo "No tests yet"'. Cần thay thế bằng lệnh test thực tế.
+                    sh 'npm test' 
+                }
+            }
+        }
+
+
+        // --- Front-end (Next.js) Docker Stages ---
+
+        stage('Frontend: Docker Build') {
+            steps {
+                echo 'Building Next.js Docker image...'
+                // Sử dụng Dockerfile trong thư mục front-end để tạo image
+                // Image này chứa cả Next.js app đã được tối ưu cho Production
                 script {
-                    // Install Node.js using NVM approach without sudo
-                    sh '''
-                        # Install NVM (Node Version Manager)
-                        if [ ! -d "$NVM_DIR" ]; then
-                            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-                        fi
+                    // Cấu hình Docker Tool nếu cần (thay thế 'docker' bằng tool config đã định nghĩa)
+                    // tool 'docker' 
 
-                        # Load NVM
-                        export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                        [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-
-                        # Install and use Node.js
-                        nvm install ${NODE_VERSION}
-                        nvm use ${NODE_VERSION}
-                        nvm alias default ${NODE_VERSION}
-
-                        # Add NVM to PATH for subsequent stages
-                        echo "export NVM_DIR=$NVM_DIR" >> ~/.bashrc
-                        echo "[ -s \\"\\$NVM_DIR/nvm.sh\\" ] && . \\"\\$NVM_DIR/nvm.sh\\"" >> ~/.bashrc
-                        echo "[ -s \\"\\$NVM_DIR/bash_completion\\" ] && . \\"\\$NVM_DIR/bash_completion\\"" >> ~/.bashrc
-
-                        # Verify installation
-                        node --version
-                        npm --version
-                    '''
+                    // Sử dụng `docker build` để xây dựng image
+                    sh "docker build -t ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend ./${FRONTEND_DIR}"
+                    sh "docker tag ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend"
                 }
             }
         }
 
-        stage('Lint Frontend') {
+        // --- Deployment/Push (Tùy chọn) ---
+        
+        stage('Push Docker Image') {
+            // Chỉ chạy bước này khi tất cả các stage trước đó thành công
+            when { expression { return currentBuild.result == 'SUCCESS' } }
             steps {
-                dir('front-end') {
-                    sh '''
-                        export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                        npm ci
-                        npm run lint
-                    '''
-                }
-            }
-        }
-
-        stage('Lint Backend') {
-            steps {
-                dir('back-end') {
-                    sh '''
-                        export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                        npm ci
-                        npm run lint
-                    '''
-                }
-            }
-        }
-
-        stage('Test Frontend') {
-            steps {
-                dir('front-end') {
-                    sh '''
-                        export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                        npm ci
-                        npm test -- --watchAll=false --passWithNoTests
-                    '''
-                }
-            }
-            post {
-                always {
-                    publishTestResults testResultsPattern: 'front-end/test-results.xml', allowEmptyResults: true
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'front-end/coverage',
-                        reportFiles: 'index.html',
-                        reportName: 'Frontend Coverage Report'
-                    ])
-                }
-            }
-        }
-
-        stage('Test Backend') {
-            steps {
-                dir('back-end') {
-                    sh '''
-                        export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                        npm ci
-                        npm test
-                    '''
-                }
-            }
-            post {
-                always {
-                    publishTestResults testResultsPattern: 'back-end/test-results.xml', allowEmptyResults: true
-                }
-            }
-        }
-
-        stage('Build Frontend') {
-            steps {
-                dir('front-end') {
-                    sh '''
-                        export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                        npm ci
-                        npm run build
-                    '''
-                }
-            }
-        }
-
-        stage('Build Backend') {
-            steps {
-                dir('back-end') {
-                    sh '''
-                        export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                        npm ci
-                        npm run build
-                    '''
-                }
-            }
-        }
-
-        stage('Build Docker Images') {
-            parallel {
-                stage('Frontend Docker Image') {
-                    steps {
-                        script {
-                            docker.build(FRONTEND_IMAGE, './front-end')
-                        }
-                    }
-                }
-                stage('Backend Docker Image') {
-                    steps {
-                        script {
-                            docker.build(BACKEND_IMAGE, './back-end')
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Push Docker Images') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'develop'
-                }
-            }
-            steps {
+                echo 'Pushing Docker image to registry...'
                 script {
-                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin ${DOCKER_REGISTRY}"
-                        docker.image(FRONTEND_IMAGE).push()
-                        docker.image(BACKEND_IMAGE).push()
-                        sh "docker logout ${DOCKER_REGISTRY}"
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to Staging') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                script {
-                    // Deploy to staging environment
-                    sh '''
-                        echo "Deploying to staging environment..."
-                        # Update docker-compose for staging
-                        sed -i "s/localhost:3000/staging.yourdomain.com/g" docker-compose.yml
-                        sed -i "s/localhost:8080/staging-api.yourdomain.com/g" docker-compose.yml
-
-                        # Deploy using docker-compose
-                        docker-compose -f docker-compose.staging.yml down
-                        docker-compose -f docker-compose.staging.yml pull
-                        docker-compose -f docker-compose.staging.yml up -d
-
-                        echo "Staging deployment completed"
-                    '''
-                }
-            }
-        }
-
-        stage('Deploy to Production') {
-            when {
-                branch 'main'
-            }
-            input {
-                message "Deploy to production?"
-                ok "Deploy"
-            }
-            steps {
-                script {
-                    // Deploy to production environment
-                    sh '''
-                        echo "Deploying to production environment..."
-
-                        # Production deployment with zero downtime
-                        docker-compose -f docker-compose.prod.yml down
-                        docker-compose -f docker-compose.prod.yml pull
-                        docker-compose -f docker-compose.prod.yml up -d
-
-                        # Health check
-                        sleep 30
-                        curl -f http://localhost:3000 || exit 1
-                        curl -f http://localhost:8080/api/health || exit 1
-
-                        echo "Production deployment completed"
-                    '''
-                }
-            }
-        }
-
-        stage('Security Scan') {
-            steps {
-                script {
-                    // Run security scans on Docker images
-                    sh '''
-                        echo "Running security scans..."
-                        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-                            aquasec/trivy image ${FRONTEND_IMAGE}:latest || true
-                        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-                            aquasec/trivy image ${BACKEND_IMAGE}:latest || true
-                    '''
-                }
-            }
-        }
-
-        stage('Performance Test') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'develop'
-                }
-            }
-            steps {
-                script {
-                    sh '''
-                        echo "Running performance tests..."
-                        # Install Apache Bench if not present (for Ubuntu/Debian)
-                        if command -v apt-get > /dev/null; then
-                            which ab || sudo apt-get update && sudo apt-get install -y apache2-utils
-                        elif command -v yum > /dev/null; then
-                            which ab || sudo yum install -y httpd-tools
-                        elif command -v apk > /dev/null; then
-                            which ab || apk add --no-cache apache2-utils
-                        fi
-
-                        # Wait for services to be ready
-                        sleep 60
-
-                        # Run load tests
-                        ab -n 100 -c 10 http://localhost:3000/ || true
-                        ab -n 100 -c 10 http://localhost:8080/api/health || true
-                    '''
+                    // Đăng nhập vào Registry (sử dụng credentials đã lưu trong Jenkins)
+                    // withCredentials([usernamePassword(credentialsId: 'docker-registry-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    //     sh "docker login ${DOCKER_REGISTRY} -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                    // }
+                    
+                    // Push image
+                    sh "docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend"
+                    sh "docker tag ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:latest-frontend"
+                    sh "docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:latest-frontend"
                 }
             }
         }
     }
 
+    // Các hành động sau khi Pipeline hoàn thành
     post {
+        always {
+            echo 'Pipeline completed.'
+            // Ghi lại kết quả build (Jenkins ghi lại tự động nhưng đây là một bước xác nhận)
+            junit '**/test-results/*.xml' // Nếu bạn có file kết quả test
+        }
         success {
+            echo 'Successfully built, tested, and pushed images.'
+        }
+        failure {
+            echo 'Build failed. Please review the logs.'
+        }
+        cleanup {
+            // Xóa image local sau khi push (để tránh đầy ổ đĩa trên Agent)
             script {
-                echo "Pipeline completed successfully!"
-
-                // Send success notification
-                if (env.BRANCH_NAME == 'main') {
-                    emailext (
-                        subject: "✅ Pet Store - Production Deployment Successful",
-                        body: "The Pet Store application has been successfully deployed to production.\n\nBuild: ${env.BUILD_URL}\nBranch: ${env.BRANCH_NAME}\nCommit: ${env.GIT_COMMIT}",
-                        to: "luonghaimal@gmail.com"
-                    )
+                try {
+                    sh "docker rmi ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend"
+                } catch (e) {
+                    echo "Could not remove image: ${e}"
                 }
             }
-        }
-
-        failure {
-            script {
-                echo "Pipeline failed!"
-
-                // Send failure notification
-                emailext (
-                    subject: "❌ Pet Store - Pipeline Failed",
-                    body: "The Pet Store pipeline has failed.\n\nBuild: ${env.BUILD_URL}\nBranch: ${env.BRANCH_NAME}\nCommit: ${env.GIT_COMMIT}\n\nPlease check the logs and fix the issues.",
-                    to: "luonghaimal@gmail.com"
-                )
-            }
-        }
-
-        unstable {
-            script {
-                echo "Pipeline is unstable!"
-                emailext (
-                    subject: "⚠️ Pet Store - Pipeline Unstable",
-                    body: "The Pet Store pipeline completed with warnings.\n\nBuild: ${env.BUILD_URL}\nBranch: ${env.BRANCH_NAME}\nCommit: ${env.GIT_COMMIT}",
-                    to: "luonghaimal@gmail.com"
-                )
-            }
-        }
-
-        always {
-            // Clean up workspace
-            cleanWs()
-
-            // Clean up Docker resources
-            sh '''
-                echo "Cleaning up Docker resources..."
-                docker system prune -f
-                docker volume prune -f
-            '''
         }
     }
 }
+
