@@ -1,11 +1,10 @@
 // Jenkinsfile - Declarative Pipeline cho Next.js (Front-end) và Node/TS (Back-end)
 pipeline {
-    // Sử dụng một Docker image làm Agent cho toàn bộ pipeline.
-    // Điều này đảm bảo rằng Node.js, npm, và yarn (nếu dùng) đã sẵn sàng.
+    // SỬ DỤNG DOCKER AGENT ĐỂ ĐẢM BẢO MÔI TRƯỜNG NODE.JS SẴN SÀNG
     agent {
         docker {
-            image 'node:20-slim' // Dùng image tương tự như trong Dockerfile của bạn
-            args '-u root:root' // Đảm bảo quyền truy cập file trong môi trường Jenkins
+            image 'node:20-slim' // Image này đã có sẵn Node.js 20
+            args '-u root:root' // Đảm bảo quyền truy cập file
         }
     }
 
@@ -17,6 +16,8 @@ pipeline {
         // Tên image Docker cuối cùng để push (ví dụ)
         DOCKER_IMAGE_NAME = "my-app/full-stack"
         DOCKER_REGISTRY = "your-docker-registry.com"
+        // Thêm biến cho Docker credentials ID nếu bạn sử dụng credentials trong Jenkins
+        DOCKER_CREDENTIALS_ID = 'docker-registry-credentials' 
     }
 
     // Các bước của quy trình CI
@@ -31,17 +32,16 @@ pipeline {
         }
 
         // --- Back-end (Node.js/TypeScript) Stages ---
+        // Không cần NVM vì chúng ta đang dùng Docker Agent
         
         stage('Backend: Install Dependencies & Build') {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Installing backend dependencies...'
-                    // Sử dụng npm ci để đảm bảo tính nhất quán (dựa trên package-lock.json)
-                    sh 'npm ci' 
+                    sh 'npm ci' // npm ci thay vì npm install
                     
                     echo 'Building backend TypeScript project...'
-                    // Lệnh build đã định nghĩa trong package.json của bạn: "build": "tsc"
-                    sh 'npm run build'
+                    sh 'npm run build' // Chạy tsc
                 }
             }
         }
@@ -50,12 +50,10 @@ pipeline {
             steps {
                 dir("${BACKEND_DIR}") {
                     echo 'Running backend linting...'
-                    // Lệnh lint đã định nghĩa trong package.json của bạn: "lint": "eslint ."
                     sh 'npm run lint'
                     
                     echo 'Running backend tests...'
-                    // Lệnh test hiện đang là 'echo "No tests yet"'. Cần thay thế bằng lệnh test thực tế.
-                    sh 'npm test' 
+                    sh 'npm test' // Thay thế bằng lệnh test thực tế (vd: npm run test:ci)
                 }
             }
         }
@@ -66,10 +64,8 @@ pipeline {
         stage('Frontend: Docker Build') {
             steps {
                 echo 'Building Next.js Docker image...'
-                // Sử dụng Dockerfile trong thư mục front-end để tạo image
-                // Image này chứa cả Next.js app đã được tối ưu cho Production
                 script {
-                    // Cấu hình Docker Tool nếu cần (thay thế 'docker' bằng tool config đã định nghĩa)
+                    // Cấu hình Docker Tool nếu cần
                     // tool 'docker' 
 
                     // Sử dụng `docker build` để xây dựng image
@@ -82,15 +78,17 @@ pipeline {
         // --- Deployment/Push (Tùy chọn) ---
         
         stage('Push Docker Image') {
-            // Chỉ chạy bước này khi tất cả các stage trước đó thành công
+            // Chỉ chạy bước này khi build thành công
             when { expression { return currentBuild.result == 'SUCCESS' } }
             steps {
                 echo 'Pushing Docker image to registry...'
                 script {
-                    // Đăng nhập vào Registry (sử dụng credentials đã lưu trong Jenkins)
-                    // withCredentials([usernamePassword(credentialsId: 'docker-registry-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                    //     sh "docker login ${DOCKER_REGISTRY} -u ${DOCKER_USER} -p ${DOCKER_PASS}"
-                    // }
+                    // Đăng nhập vào Registry (bạn cần phải cấu hình Credentials trong Jenkins trước)
+                    /*
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                        sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin ${DOCKER_REGISTRY}"
+                    }
+                    */
                     
                     // Push image
                     sh "docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend"
@@ -104,21 +102,20 @@ pipeline {
     // Các hành động sau khi Pipeline hoàn thành
     post {
         always {
-            echo 'Pipeline completed.'
-            // Ghi lại kết quả build (Jenkins ghi lại tự động nhưng đây là một bước xác nhận)
-            junit '**/test-results/*.xml' // Nếu bạn có file kết quả test
+            echo 'Pipeline finished.'
+            junit '**/test-results/*.xml' // Ghi lại kết quả test nếu có
         }
         success {
-            echo 'Successfully built, tested, and pushed images.'
+            echo 'Build, Test, and Docker Build successful.'
         }
         failure {
-            echo 'Build failed. Please review the logs.'
+            echo 'Pipeline failed. Please review the logs.'
         }
         cleanup {
             // Xóa image local sau khi push (để tránh đầy ổ đĩa trên Agent)
             script {
                 try {
-                    sh "docker rmi ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend"
+                    sh "docker rmi ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend"
                 } catch (e) {
                     echo "Could not remove image: ${e}"
                 }
