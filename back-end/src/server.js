@@ -35,7 +35,7 @@ app.get("/", (req, res) => {
   res.send("Pet Shop API is running");
 });
 
-// Start server
+// Start server123
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
