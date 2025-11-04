@@ -30,8 +30,8 @@ pipeline {
 
                         # Load NVM
                         export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-                        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 
                         # Install and use Node.js
                         nvm install ${NODE_VERSION}
@@ -40,8 +40,8 @@ pipeline {
 
                         # Add NVM to PATH for subsequent stages
                         echo "export NVM_DIR=$NVM_DIR" >> ~/.bashrc
-                        echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"" >> ~/.bashrc
-                        echo "[ -s \"\$NVM_DIR/bash_completion\" ] && \. \"\$NVM_DIR/bash_completion\"" >> ~/.bashrc
+                        echo "[ -s \\"\\$NVM_DIR/nvm.sh\\" ] && . \\"\\$NVM_DIR/nvm.sh\\"" >> ~/.bashrc
+                        echo "[ -s \\"\\$NVM_DIR/bash_completion\\" ] && . \\"\\$NVM_DIR/bash_completion\\"" >> ~/.bashrc
 
                         # Verify installation
                         node --version
@@ -56,7 +56,7 @@ pipeline {
                 dir('front-end') {
                     sh '''
                         export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         npm ci
                         npm run lint
                     '''
@@ -69,7 +69,7 @@ pipeline {
                 dir('back-end') {
                     sh '''
                         export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         npm ci
                         npm run lint
                     '''
@@ -82,7 +82,7 @@ pipeline {
                 dir('front-end') {
                     sh '''
                         export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         npm ci
                         npm test -- --watchAll=false --passWithNoTests
                     '''
@@ -108,7 +108,7 @@ pipeline {
                 dir('back-end') {
                     sh '''
                         export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         npm ci
                         npm test
                     '''
@@ -126,7 +126,7 @@ pipeline {
                 dir('front-end') {
                     sh '''
                         export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         npm ci
                         npm run build
                     '''
@@ -139,7 +139,7 @@ pipeline {
                 dir('back-end') {
                     sh '''
                         export NVM_DIR="$NVM_DIR"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
                         npm ci
                         npm run build
                     '''
