@@ -33,19 +33,18 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# BƯỚC QUAN TRỌNG: Chỉ copy dependencies cần thiết cho RUNTIME.
-# Chúng ta không cần npm install lại ở đây vì Next.js Standalone Build đã tạo server.js.
+# BƯỚC SỬA LỖI: Di chuyển việc TẠO USER/GROUP lên trước khi CHOWN
+# Tạo user/group cho bảo mật
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
 # Copy the built application
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
+# Lệnh CHOWN giờ sẽ thành công vì user/group đã được tạo
 RUN chown nextjs:nodejs .next
-
-# Tạo user/group cho bảo mật
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
 
 # Automatically leverage output traces to reduce image size
 # Copy các file build production từ Stage builder
