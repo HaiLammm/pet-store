@@ -1,11 +1,25 @@
- xác nhận là 'docker-hub-cred')
-        DOCKER_CREDENTIALS_ID = 'docker-hub-cred' 
+pipeline {
+    // Sử dụng agent any cho toàn bộ pipeline để chạy các lệnh Docker CLI/Compose trên Agent Host (Ubuntu)
+    agent any
 
-        // Tên image hoàn chỉnh cho Deployment (luonghailam/pet-store:latest-frontend)
+    environment {
+        // --- CẤU HÌNH DỰ ÁN ---
+        FRONTEND_DIR = 'front-end'
+        BACKEND_DIR  = 'back-end'
+        // Tên image Docker Hub cá nhân (Ví dụ: luonghailam/pet-store)
+        DOCKER_IMAGE_NAME = "luonghailam/pet-store" 
+
+        // --- CẤU HÌNH DOCKER/JENKINS ---
+        // Địa chỉ Docker Hub
+        DOCKER_REGISTRY = "docker.io" 
+        // ID Credentials trong Jenkins (Đã xác nhận là 'dockerhub-cred')
+        DOCKER_CREDENTIALS_ID = 'dockerhub-cred' 
+
+        // Tên image hoàn chỉnh cho Deployment
         FRONTEND_FULL_IMAGE = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:latest-frontend"
         BACKEND_FULL_IMAGE = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:latest-backend"
         
-        // Cần dùng BUILD_NUMBER cho tag duy nhất
+        // Tên image dùng cho Build (gắn với BUILD_NUMBER)
         FRONTEND_BUILD_IMAGE = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-frontend"
         BACKEND_BUILD_IMAGE = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-backend"
     }
@@ -110,7 +124,7 @@
             steps {
                 echo 'Deploying application using docker-compose...'
                 script {
-                    // ĐÃ CHỈNH SỬA: Đăng nhập Docker Hub để kéo image từ repository cá nhân
+                    // Đăng nhập Docker Hub để kéo image từ repository cá nhân
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin ${DOCKER_REGISTRY}"
 
