@@ -296,7 +296,7 @@ pipeline {
                     emailext (
                         subject: "✅ Pet Store - Production Deployment Successful",
                         body: "The Pet Store application has been successfully deployed to production.\n\nBuild: ${env.BUILD_URL}\nBranch: ${env.BRANCH_NAME}\nCommit: ${env.GIT_COMMIT}",
-                        to: "team@yourcompany.com"
+                        to: "luonghaimal@gmail.com"
                     )
                 }
             }
