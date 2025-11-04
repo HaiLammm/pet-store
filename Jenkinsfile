@@ -93,8 +93,8 @@ pipeline {
         }
 
         stage('Push Docker Images') {
-            // Stage quan trọng: Đẩy image lên Docker Hub
-            when { expression { return currentBuild.result == 'SUCCESS' } } 
+            // ĐÃ SỬA: Thay đổi điều kiện when để đảm bảo stage chạy nếu không có lỗi trước đó.
+            when { expression { return currentBuild.result == null || currentBuild.result == 'SUCCESS' } } 
             agent any
             steps {
                 echo 'Pushing Docker images to registry...'
