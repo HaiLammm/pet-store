@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18-alpine'
+            args '-v /var/run/docker.sock:/var/run/docker.sock --privileged'
+        }
+    }
 
     environment {
         NODE_VERSION = '18'
@@ -17,11 +22,14 @@ pipeline {
             }
         }
 
-        stage('Setup Node.js') {
+        stage('Setup Docker') {
             steps {
                 script {
-                    // Install Node.js if not present
-                    sh 'node --version || curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && apt-get install -y nodejs'
+                    // Install Docker CLI in the Node.js container
+                    sh '''
+                        apk add --no-cache docker-cli
+                        docker --version
+                    '''
                 }
             }
         }
@@ -217,7 +225,7 @@ pipeline {
                     sh '''
                         echo "Running performance tests..."
                         # Install Apache Bench if not present
-                        which ab || apt-get update && apt-get install -y apache2-utils
+                        which ab || apk add --no-cache apache2-utils
 
                         # Wait for services to be ready
                         sleep 60
