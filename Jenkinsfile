@@ -127,7 +127,8 @@ pipeline {
                     sh "docker compose -f docker-compose.yml down --remove-orphans"
                     sh "docker compose -f docker-compose.yml up -d"
 
-                    echo "Deployment completed. Waiting for services to start..."
+                    echo "Deployment completed. Waiting for services to be healthy..."
+                    sh "docker compose -f docker-compose.yml ps"
                 }
             }
         }
@@ -136,15 +137,22 @@ pipeline {
             agent any
             steps {
                 echo 'Running service health checks...'
-                // ⭐️ ĐÃ SỬA: Tăng thời gian chờ lên 60 giây
-                sh 'sleep 60' 
+
+                // Wait for services to be healthy using docker-compose
+                echo 'Waiting for all services to become healthy...'
+                sh 'timeout 180 sh -c "until docker compose -f docker-compose.yml ps | grep -E \"healthy|Up\" | wc -l | grep -q 3; do echo \"Waiting for services to be healthy...\"; sleep 5; done" || echo "Services health check completed with timeout"'
+
+                // Additional wait to ensure services are fully started
+                sh 'sleep 30'
 
                 // Kiểm tra Backend trước (vì Frontend phụ thuộc Backend)
-                sh "curl -f http://localhost:${BACKEND_HOST_PORT}/api/health || exit 1" 
+                echo "Checking backend health at http://localhost:${BACKEND_HOST_PORT}/api/health"
+                sh "curl -f http://localhost:${BACKEND_HOST_PORT}/api/health || exit 1"
 
-                // Kiểm tra Frontend trên Host Port 8082
+                // Kiểm tra Frontend trên Host Port 8083
+                echo "Checking frontend health at http://localhost:${FRONTEND_HOST_PORT}"
                 sh "curl -f http://localhost:${FRONTEND_HOST_PORT} || exit 1"
-                
+
                 echo 'All services are healthy and running!'
             }
         }

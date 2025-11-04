@@ -1,9 +1,6 @@
-version: '3.8'
-
 services:
   frontend:
-    build:
-      context: ./front-end
+    image: luonghailam/pet-store:latest-frontend
     ports:
       # Host Port 8083 to avoid conflicts
       - "8083:3000"
@@ -11,11 +8,17 @@ services:
       # Frontend gọi Backend qua tên dịch vụ 'backend' và cổng nội bộ 8080
       - NEXT_PUBLIC_API_URL=http://backend:8080/api
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   backend:
-    build:
-      context: ./back-end
+    image: luonghailam/pet-store:latest-backend
     ports:
       # HOST Port 3002 to avoid conflicts
       - "3002:8080"
@@ -27,14 +30,27 @@ services:
       - CLOUDINARY_API_KEY=your-api-key
       - CLOUDINARY_API_SECRET=your-api-secret
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   mongodb:
     image: mongo:latest
     ports:
-      - "27018:27017"
+      - "27019:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   mongo-data:
