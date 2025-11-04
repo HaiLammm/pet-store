@@ -16,8 +16,8 @@ pipeline {
         DOCKER_CREDENTIALS_ID = 'dockerhub-cred' 
         
         // --- CẤU HÌNH PORT HOST ---
-        FRONTEND_HOST_PORT = '8082' // ĐÃ SỬA: Chạy trên Host Port 8082 để tránh 8080 (Jenkins)
-        BACKEND_HOST_PORT = '3001' // ĐÃ SỬA: Chạy trên Host Port 3001
+        FRONTEND_HOST_PORT = '8083' // Updated: Chạy trên Host Port 8083 để tránh conflicts
+        BACKEND_HOST_PORT = '3002' // Updated: Chạy trên Host Port 3002 để tránh conflicts
 
         // Tên image hoàn chỉnh cho Deployment
         FRONTEND_FULL_IMAGE = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:latest-frontend"
