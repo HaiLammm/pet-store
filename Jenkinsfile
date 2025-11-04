@@ -157,7 +157,7 @@ pipeline {
                 sh 'curl -f http://localhost:3000 || exit 1'
                 
                 // Kiểm tra Backend (Port 8080)
-                sh 'curl -f http://localhost:8080/api/health || exit 1' 
+                sh 'curl -f http://localhost:3001/api/health || exit 1' 
                 
                 echo 'All services are healthy and running!'
             }
