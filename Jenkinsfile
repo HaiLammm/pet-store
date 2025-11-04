@@ -310,7 +310,7 @@ pipeline {
                 emailext (
                     subject: "❌ Pet Store - Pipeline Failed",
                     body: "The Pet Store pipeline has failed.\n\nBuild: ${env.BUILD_URL}\nBranch: ${env.BRANCH_NAME}\nCommit: ${env.GIT_COMMIT}\n\nPlease check the logs and fix the issues.",
-                    to: "team@yourcompany.com"
+                    to: "luonghaimal@gmail.com"
                 )
             }
         }
@@ -321,7 +321,7 @@ pipeline {
                 emailext (
                     subject: "⚠️ Pet Store - Pipeline Unstable",
                     body: "The Pet Store pipeline completed with warnings.\n\nBuild: ${env.BUILD_URL}\nBranch: ${env.BRANCH_NAME}\nCommit: ${env.GIT_COMMIT}",
-                    to: "team@yourcompany.com"
+                    to: "luonghaimal@gmail.com"
                 )
             }
         }
