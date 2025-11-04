@@ -136,14 +136,14 @@ pipeline {
             agent any
             steps {
                 echo 'Running service health checks...'
-                // Chờ một chút để các services khởi động
-                sh 'sleep 30' 
+                // ⭐️ ĐÃ SỬA: Tăng thời gian chờ lên 60 giây
+                sh 'sleep 60' 
 
-                // ĐÃ SỬA: Kiểm tra Frontend trên Host Port 8082
-                sh "curl -f http://localhost:${FRONTEND_HOST_PORT} || exit 1"
-                
-                // ĐÃ SỬA: Kiểm tra Backend trên Host Port 3001
+                // Kiểm tra Backend trước (vì Frontend phụ thuộc Backend)
                 sh "curl -f http://localhost:${BACKEND_HOST_PORT}/api/health || exit 1" 
+
+                // Kiểm tra Frontend trên Host Port 8082
+                sh "curl -f http://localhost:${FRONTEND_HOST_PORT} || exit 1"
                 
                 echo 'All services are healthy and running!'
             }
