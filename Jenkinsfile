@@ -1,18 +1,4 @@
-pipeline {
-    // Sử dụng agent any cho toàn bộ pipeline để chạy các lệnh Docker CLI/Compose trên Agent Host (Ubuntu)
-    agent any
-
-    environment {
-        // --- CẤU HÌNH DỰ ÁN ---
-        FRONTEND_DIR = 'front-end'
-        BACKEND_DIR  = 'back-end'
-        // ĐÃ CHỈNH SỬA: Thêm tên người dùng Docker Hub của bạn (luonghailam/) vào tên image
-        DOCKER_IMAGE_NAME = "luonghailam/pet-store" 
-
-        // --- CẤU HÌNH DOCKER/JENKINS (ĐÃ CHÍNH XÁC) ---
-        // Địa chỉ Docker Hub
-        DOCKER_REGISTRY = "docker.io" 
-        // ID Credentials trong Jenkins (đã xác nhận là 'docker-hub-cred')
+ xác nhận là 'docker-hub-cred')
         DOCKER_CREDENTIALS_ID = 'docker-hub-cred' 
 
         // Tên image hoàn chỉnh cho Deployment (luonghailam/pet-store:latest-frontend)
