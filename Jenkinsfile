@@ -1,13 +1,9 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:18-alpine'
-            args '-v /var/run/docker.sock:/var/run/docker.sock --privileged'
-        }
-    }
+    agent any
 
     environment {
         NODE_VERSION = '18'
+        NVM_DIR = '/home/jenkins/.nvm'
         DOCKER_REGISTRY = 'your-registry.com' // Change this to your registry
         FRONTEND_IMAGE = "${DOCKER_REGISTRY}/pet-store-frontend"
         BACKEND_IMAGE = "${DOCKER_REGISTRY}/pet-store-backend"
@@ -22,13 +18,34 @@ pipeline {
             }
         }
 
-        stage('Setup Docker') {
+        stage('Setup Node.js') {
             steps {
                 script {
-                    // Install Docker CLI in the Node.js container
+                    // Install Node.js using NVM approach without sudo
                     sh '''
-                        apk add --no-cache docker-cli
-                        docker --version
+                        # Install NVM (Node Version Manager)
+                        if [ ! -d "$NVM_DIR" ]; then
+                            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+                        fi
+
+                        # Load NVM
+                        export NVM_DIR="$NVM_DIR"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+                        # Install and use Node.js
+                        nvm install ${NODE_VERSION}
+                        nvm use ${NODE_VERSION}
+                        nvm alias default ${NODE_VERSION}
+
+                        # Add NVM to PATH for subsequent stages
+                        echo "export NVM_DIR=$NVM_DIR" >> ~/.bashrc
+                        echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"" >> ~/.bashrc
+                        echo "[ -s \"\$NVM_DIR/bash_completion\" ] && \. \"\$NVM_DIR/bash_completion\"" >> ~/.bashrc
+
+                        # Verify installation
+                        node --version
+                        npm --version
                     '''
                 }
             }
@@ -37,8 +54,12 @@ pipeline {
         stage('Lint Frontend') {
             steps {
                 dir('front-end') {
-                    sh 'npm ci'
-                    sh 'npm run lint'
+                    sh '''
+                        export NVM_DIR="$NVM_DIR"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        npm ci
+                        npm run lint
+                    '''
                 }
             }
         }
@@ -46,8 +67,12 @@ pipeline {
         stage('Lint Backend') {
             steps {
                 dir('back-end') {
-                    sh 'npm ci'
-                    sh 'npm run lint'
+                    sh '''
+                        export NVM_DIR="$NVM_DIR"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        npm ci
+                        npm run lint
+                    '''
                 }
             }
         }
@@ -55,8 +80,12 @@ pipeline {
         stage('Test Frontend') {
             steps {
                 dir('front-end') {
-                    sh 'npm ci'
-                    sh 'npm test -- --watchAll=false --passWithNoTests'
+                    sh '''
+                        export NVM_DIR="$NVM_DIR"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        npm ci
+                        npm test -- --watchAll=false --passWithNoTests
+                    '''
                 }
             }
             post {
@@ -77,8 +106,12 @@ pipeline {
         stage('Test Backend') {
             steps {
                 dir('back-end') {
-                    sh 'npm ci'
-                    sh 'npm test'
+                    sh '''
+                        export NVM_DIR="$NVM_DIR"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        npm ci
+                        npm test
+                    '''
                 }
             }
             post {
@@ -91,8 +124,12 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 dir('front-end') {
-                    sh 'npm ci'
-                    sh 'npm run build'
+                    sh '''
+                        export NVM_DIR="$NVM_DIR"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        npm ci
+                        npm run build
+                    '''
                 }
             }
         }
@@ -100,8 +137,12 @@ pipeline {
         stage('Build Backend') {
             steps {
                 dir('back-end') {
-                    sh 'npm ci'
-                    sh 'npm run build'
+                    sh '''
+                        export NVM_DIR="$NVM_DIR"
+                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                        npm ci
+                        npm run build
+                    '''
                 }
             }
         }
@@ -224,8 +265,14 @@ pipeline {
                 script {
                     sh '''
                         echo "Running performance tests..."
-                        # Install Apache Bench if not present
-                        which ab || apk add --no-cache apache2-utils
+                        # Install Apache Bench if not present (for Ubuntu/Debian)
+                        if command -v apt-get > /dev/null; then
+                            which ab || sudo apt-get update && sudo apt-get install -y apache2-utils
+                        elif command -v yum > /dev/null; then
+                            which ab || sudo yum install -y httpd-tools
+                        elif command -v apk > /dev/null; then
+                            which ab || apk add --no-cache apache2-utils
+                        fi
 
                         # Wait for services to be ready
                         sleep 60
