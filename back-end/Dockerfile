@@ -24,7 +24,7 @@ RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
 
 # Expose the port the app runs on
-EXPOSE 3001
+EXPOSE 8080
 
 # Define the command to run the application
 CMD ["node", "dist/server.js"]
