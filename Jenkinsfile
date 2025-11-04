@@ -1,4 +1,4 @@
-ppipeline {
+pipeline {
     // Sử dụng agent any cho toàn bộ pipeline để chạy các lệnh Docker CLI/Compose trên Agent Host (Ubuntu)
     agent any
 
@@ -136,10 +136,9 @@ ppipeline {
                         sh "docker logout ${DOCKER_REGISTRY}"
                     }
                     
-                    // ĐÃ SỬA: Quay lại sử dụng lệnh 'docker-compose' cũ. 
-                    // Nếu vẫn lỗi, bạn cần cài đặt lại docker-compose v1/v2 và đảm bảo nó trong PATH.
-                    sh "docker-compose -f docker-compose.yml down --remove-orphans"
-                    sh "docker-compose -f docker-compose.yml up -d"
+                    // ⭐️ ĐÃ SỬA: Sử dụng lệnh 'docker compose' (không dấu gạch ngang)
+                    sh "docker compose -f docker-compose.yml down --remove-orphans"
+                    sh "docker compose -f docker-compose.yml up -d"
 
                     echo "Deployment completed. Waiting for services to start..."
                 }
