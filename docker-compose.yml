@@ -7,9 +7,6 @@ services:
     ports:
       # KHÔNG CÒN XUNG ĐỘT: Host Port 8082 tránh 8080 của Jenkins
       - "8082:3000"
-    volumes:
-      - ./front-end:/app
-      - /app/node_modules
     environment:
       # Frontend gọi Backend qua tên dịch vụ 'backend' và cổng nội bộ 8080
       - NEXT_PUBLIC_API_URL=http://backend:8080/api
@@ -22,9 +19,6 @@ services:
     ports:
       # HOST Port 3001
       - "3001:8080"
-    volumes:
-      - ./back-end:/app
-      - /app/node_modules
     environment:
       - PORT=8080
       - MONGO_URI=mongodb://mongodb:27017/pet-store

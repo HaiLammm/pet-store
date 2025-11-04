@@ -24,6 +24,15 @@ mongoose
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    service: "pet-store-api"
+  });
+});
+
 // Routes
 app.use("/api/auth", authRouter);
 app.use("/api/pets", petsRouter);
