@@ -6,7 +6,8 @@ pipeline {
         // --- CẤU HÌNH DỰ ÁN ---
         FRONTEND_DIR = 'front-end'
         BACKEND_DIR  = 'back-end'
-        DOCKER_IMAGE_NAME = "pet-store" // Tên chung cho image (ví dụ: luonghailam/pet-store)
+        // ĐÃ CHỈNH SỬA: Thêm tên người dùng Docker Hub của bạn (luonghailam/) vào tên image
+        DOCKER_IMAGE_NAME = "luonghailam/pet-store" 
 
         // --- CẤU HÌNH DOCKER/JENKINS (ĐÃ CHÍNH XÁC) ---
         // Địa chỉ Docker Hub
@@ -123,10 +124,18 @@ pipeline {
             steps {
                 echo 'Deploying application using docker-compose...'
                 script {
-                    // Tải image mới nhất đã được push (Đảm bảo image mới nhất được dùng)
-                    sh "docker pull ${FRONTEND_FULL_IMAGE}"
-                    sh "docker pull ${BACKEND_FULL_IMAGE}"
+                    // ĐÃ CHỈNH SỬA: Đăng nhập Docker Hub để kéo image từ repository cá nhân
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin ${DOCKER_REGISTRY}"
 
+                        // Tải image mới nhất đã được push 
+                        sh "docker pull ${FRONTEND_FULL_IMAGE}"
+                        sh "docker pull ${BACKEND_FULL_IMAGE}"
+
+                        // Đăng xuất ngay sau khi pull xong
+                        sh "docker logout ${DOCKER_REGISTRY}"
+                    }
+                    
                     // Sử dụng docker-compose.yml trong thư mục gốc
                     // down --remove-orphans: Xóa container cũ
                     // up -d: Khởi động services mới
