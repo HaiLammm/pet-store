@@ -14,10 +14,12 @@ const PORT = process.env.PORT || 8080;
 
 // Middleware
 app.use(cors({
-  origin: ['https://pet-store-blond-nu.vercel.app', 'http://localhost:3000'],
+  origin: ['http://localhost:3000', 'https://pet-store-jbf8whktb-hailammms-projects.vercel.app', 'https://pet-store-jbf8whktb-hailammms-projects.vercel.app/'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 // Allow larger JSON bodies for base64 image uploads
 app.use(express.json({ limit: "10mb" }));
